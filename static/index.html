@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+<title>Place an Order</title>
+
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <!-- Bootstrap includes javascript and css  (must follow jquery) -->
+  <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"/>
+</head>
+
+<body>
+<div class="container">
+  <div class="row">
+    <h1> Place an order </h1>
+  </div>
+
+  <!-- Order Form -->
+  <form class="form-horizontal" action="/order" method="post">
+
+    <!-- Make Input -->
+    <div class="form-group">
+      <label for="inputMake" class="col-md-2 control-label">Make</label>
+      <div class="col-md-4">
+        <select class="form-control" name="make" id="inputMake">
+          <option> Select Make </option>
+          <option> ACME Autos </option>
+          <option> Rainer </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Model Input -->
+    <div class="form-group">
+      <label for="inputModel" class="col-md-2 control-label">Model</label>
+      <div class="col-md-4">
+        <input type="text" name="model" class="form-control" id="inputModel" placeholder="Model">
+      </div>
+    </div>
+
+    <!-- Package Input -->
+    <div class="form-group">
+      <label for="inputTrimPackage" class="col-md-2 control-label">Trim Package</label>
+      <div class="col-md-4">
+        <input type="text" name="trim_package" class="form-control" id="inputTrimPackage" placeholder="Trim Package">
+      </div>
+    </div>
+
+    <!-- Customer Id Input -->
+    <div class="form-group">
+      <label for="inputCustomerId" class="col-md-2 control-label">Customer ID</label>
+      <div class="col-md-4">
+        <input type="text" name="customer_id" class="form-control" id="inputCustomerId" placeholder="Customer ID">
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="form-group">
+      <div class="col-md-offset-2 col-md-4">
+        <input type="submit" value="Create" />
+      </div>
+    </div>
+  </form>
+
+</div>
+</body>
+</html>
