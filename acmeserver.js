@@ -4,10 +4,13 @@ var express = require('express'),
 
 const PORT = 3050;
 var app = express();
+
+//app.use('/acme/api/v45.1');
+
 var server = http.createServer(app);
 
 server.listen(PORT, function() {
-	console.log('ACME Server listening on http://localhost:%s', PORT);
+	console.log('ACME Server listening on http://localhost:%s/acme/api/v45.1', PORT);
 });
 
 app.use(bodyParser.urlencoded({ extended: true }));  //this allows req.body
@@ -23,11 +26,10 @@ app.use(bodyParser.urlencoded({ extended: true }));  //this allows req.body
 * url: /order
 */
 
-app.post('/order', function(req, res) {
+app.post('/acme/api/v45.1/order', function(req, res) {
 	var req_body = req.body;
   	console.log('Post request to order: ', req_body);
 
-  	
   	console.log('register api_key: ', req_body.api_key); 
   	console.log('register model: ', req_body.model); 
   	console.log('register package: ', req_body.package); 

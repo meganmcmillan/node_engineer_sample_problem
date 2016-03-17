@@ -7,7 +7,7 @@ var app = express();
 var server = http.createServer(app);
 
 server.listen(PORT, function() {
-	console.log('ACME Server listening on http://localhost:%s', PORT);
+	console.log('ACME Server listening on http://localhost:%s/r', PORT);
 });
 
 app.use(bodyParser.urlencoded({ extended: true }));  //this allows req.body
@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));  //this allows req.body
 * url: /orders
 */
 
-app.get('/nonce_token', function(req, res) {
+app.get('/r/nonce_token', function(req, res) {
   	console.log('Get request to nonce_token');
 
 	res.send(
@@ -35,20 +35,13 @@ app.get('/nonce_token', function(req, res) {
 *
 * parameters: 
 *	api_key - string
-*	model - [anvil, wile, roadrunner]
-*	package - [std, super, elite]
+*	model - [pugetsound, olympic]
+*	package - [mtn, ltd, 14k]
 *
 * url: /order
 */
 
-app.post('/request_customized_model', function(req, res) {
-	var req_body = req.body;
-  	console.log('Post request to order: ', req_body);
-
-  	
-  	console.log('register order token: ', req_body.token); 
-  	console.log('register model: ', req_body.model); 
-  	console.log('register custom package: ', req_body.custom); 
+app.post('/r/request_customized_model', function(req, res) {
 
   	orderNum = getRandomInt(1, 100000)
 

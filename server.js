@@ -2,7 +2,8 @@ var express = require('express'),
 	http = require('http'),
 	bodyParser = require('body-parser'),
 	mongoose = require('mongoose'), 
-	request = require('superagent');
+	request = require('superagent'),
+	q = require('q');
 
 const PORT = 8080;
 var app = express();
@@ -14,7 +15,7 @@ server.listen(PORT, function() {
 
 app.use(bodyParser.urlencoded({ extended: true }));  //this allows req.body
 
-app.use(express.static('static')); //sets static file directory to ./static/*
+app.use(express.static('static')); 
 
 /* 
 * Connect to mongodb through mongoose
@@ -69,8 +70,7 @@ app.get('/orders', function(req, res) {
 });
 
 /*
-* Valitate cusomer's shipping address: exclude certain locations - need to add schema for Customer and shipping address
-* Keep track of all placed orders
+* Send out order request. Upon success, save order in our own db
 *
 * parameters: 
 *	make - supplier 
@@ -83,79 +83,121 @@ app.get('/orders', function(req, res) {
 
 app.post('/order', function(req, res) {
 	var req_body = req.body;
-  	console.log('Post request to order: ', req_body);
 
-  	/*
-  	console.log('register make: ', req_body.make); 
-  	console.log('register model: ', req_body.model); 
-  	console.log('register package: ', req_body.trim_package); 
-  	console.log('register customer_id: ', req_body.customer_id); 
-  	*/
+  	function sendOrder(make) {
+  		var deferred = q.defer();
 
+		if (make == 'ACME Autos') {
 
-	//check make and call supplier's API
-	if (req_body.make == 'ACME Autos') {
-		request 
-			.post('http://localhost:3050/order')
-			.set('Content-Type', 'application/x-www-form-urlencoded')
-			.send({ api_key: 'cascade.53bce4f1dfa0fe8e7ca126f91b35d3a6' })
-			.send({ model: req_body.model })
-			.send({ package: req_body.trim_package })
-			.end(function(err, res) {
-				if (err || !res.ok) {
-			       console.log('Error calling ACME API ' + err);
-			     } else {
-			       console.log('Success! Order Number: ' + res.text);
-			     }
-			})
+			models = ["anvil", "wile", "roadrunner"]
+			packages = ["std", "super", "elite"]
 
-	}
-	else if (req_body.make == 'Rainer') {
-		request
-			.get('http://localhost:3051/nonce_token')
-			.send({storefront: 'ccas­bb9630c04f'})
-			.end(function(err, res) {
-				if (err || !res.ok) {
-			       console.log('Error getting Rainer token ' + err);
-			    } else {
-			    	token = res.body
-			    	console.log('Success! Token: ' + token.nonce_token);
-			    	 request
-			    	 	.post('http://localhost:3051/request_customized_model')
-			    	 	.send({ token: token.nonce_token })
-			    	 	.send({ model: req_body.model })
-			    	 	.send({ custom: req_body.trim_package })
-			    	 	.end(function(err, res) {
+			mdl = req_body.model.toLowerCase().replace(/ /g,'');
+			pckg = req_body.trim_package.toLowerCase().replace(/ /g,'')
+
+			if (models.indexOf(mdl) > -1) {
+				if (packages.indexOf(pckg) > -1) {
+					request 
+						.post('http://localhost:3050/acme/api/v45.1/order')
+						.set('Content-Type', 'application/x-www-form-urlencoded')
+						.send({ api_key: 'cascade.53bce4f1dfa0fe8e7ca126f91b35d3a6' })
+						.send({ model: mdl })
+						.send({ package: pckg })
+						.end(function(err, res) {
 							if (err || !res.ok) {
-						       console.log('Error posting Rainer order ' + err);
+						       //console.log('Error calling ACME API ' + err);
+						       deferred.resolve(err);
 						     } else {
-						       console.log('Success! Order Number: ' + res.text);
+						       //console.log('Success! Order Number: ' + res.text);
+						       ordernum = JSON.parse(res.text);
+						       deferred.resolve(ordernum.order);
 						     }
 						})
-			    }
-			})
+				} else {
+					deferred.resolve("Package request not supported by ACME Autos")
+				}
+			} else {
+				deferred.resolve("Model request not supported by ACME Autos")
+			}
+		}
 
-	}
-	else {
-		res.sendStatus(422)
-	}
+		else if (make == 'Rainer') {
 
-	//NEED PROMISE HERE TO ONLY SAVE ON A SUCCESSFUL REQUEST
-	console.log('saving order to db');
+			models = ["pugetsound", "olympic"]
+			packages = ["mtn", "ltd", "14k"]
 
-    var newOrder = new Order({
-    	supplier: req_body.make,
-		order_id: 1000,
-		customer_id: req_body.customer_id
-    });
-    newOrder.save(function(err, data) {
-    	if(err != null) {
-        	console.log('save error: ', err);
-        } else {
-        	console.log('order saved: ', data);
-        }
-    });
+			mdl = req_body.model.toLowerCase().replace(/ /g,'');
+			pckg = req_body.trim_package.toLowerCase().replace(/ /g,'')
 
-	res.sendStatus(200); 
-	
+			if (models.indexOf(mdl) > -1) {
+				if (packages.indexOf(pckg) > -1) {
+
+					request
+						.get('http://localhost:3051/r/nonce_token')
+						.send({storefront: 'ccas­bb9630c04f'})
+						.end(function(err, res) {
+							if (err || !res.ok) {
+						       //console.log('Error getting Rainer token ' + err);
+						       deferred.resolve(err);
+						    } else {
+						    	token = res.body
+						    	//console.log('Success! Token: ' + token.nonce_token);
+						    	request
+						    	 	.post('http://localhost:3051/r/request_customized_model')
+						    	 	.send({ token: token.nonce_token })
+						    	 	.send({ model: mdl })
+						    	 	.send({ custom: pckg })
+						    	 	.end(function(err, res) {
+										if (err || !res.ok) {
+									       //console.log('Error posting Rainer order ' + err);
+									       deferred.resolve(err);
+									     } else {
+									       //console.log('Success! Order Number: ' + res.text);
+									       ordernum = JSON.parse(res.text);
+									       deferred.resolve(ordernum.order_id);
+									     }
+									})
+						    }
+						})
+				} else {
+					deferred.resolve("Package request not supported by Rainer")
+				}
+			} else {
+				deferred.resolve("Model request not supported by Rainer")
+			}
+		}
+		else {
+			deferred.resolve("Supplier not recognized")
+		}
+
+		return deferred.promise;
+
+  	}
+
+  	sendOrder(req_body.make)
+  		.then(function(orderId) {
+  			//console.log(orderId);
+  			if (typeof orderId == 'number') {
+  				//console.log('saving order to db');
+			    var newOrder = new Order({
+			    	supplier: req_body.make,
+					order_id: orderId,
+					customer_id: req_body.customer_id
+			    });
+
+			    newOrder.save(function(err, data) {
+			    	if(err != null) {
+			        	//console.log('save error: ', err);
+			        	res.status(422).send('Error Saving to database: ', err); 
+			        } else {
+			        	//console.log('order saved: ', data);
+			        	res.status(200).send('Order Saved Successfully'); 
+			        }
+			    });
+  			} else {
+  				res.status(422).send(orderId);
+  			}			
+ 
+  		})
+
 });
